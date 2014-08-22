@@ -14,7 +14,7 @@ Here's a shell session with the `numder` command:
 
 ```sh
 
-$ ./numder 10 12 14 15 16
+$ ./numder 10 12 14 15 16 
 7
 16
 9
