@@ -1,4 +1,4 @@
-# Derivatives of Numbers
+# The Derivative of a Number
 
 Yes, there actually exists an idea how to derive a number.
 
