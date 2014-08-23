@@ -25,11 +25,8 @@
  *)
 module FacMem =
 struct
-  type keyT = int
-  type valT = int
-
-  module IntMap = Map.Make (struct type t = keyT let compare = compare end)
-  type t = valT IntMap.t
+  module IntMap = Map.Make (struct type t = int let compare = compare end)
+  type t = int IntMap.t
 
   let empty: t = IntMap.empty
 
@@ -89,10 +86,7 @@ let deriv (num: int): int =
     | v :: ws ->
       let vv = pair_value v
       in derloop (u * vv) (u' * vv + u * pair_deriv v) ws
-  and ipow base expn =
-    let rec powloop xpn acc =
-      if xpn > 0 then powloop (xpn - 1) (base * acc) else acc
-    in powloop expn 1
+  and ipow base expn = (float_of_int base)**(float_of_int expn) |> int_of_float
   and pair_deriv (fac, xpn) = xpn * ipow fac (xpn - 1)
   and pair_value (fac, xpn) = ipow fac xpn
   in
