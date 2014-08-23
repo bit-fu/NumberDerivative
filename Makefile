@@ -3,11 +3,9 @@
 #   Makefile
 #   ~~~~~~~~
 #
-#   Project:		NumDer
+#   Project:		NumberDerivative
 #
 #   Created 2014-08-20:	Ulrich Singer
-#
-#   $Id$
 #
 
 # Tools
@@ -17,7 +15,7 @@ INSTALL		= /usr/bin/install -C
 
 
 # Targets
-.PHONY: all clean upload
+.PHONY: all clean
 
 all: numder repl tags
 
