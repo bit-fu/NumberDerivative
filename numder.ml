@@ -14,28 +14,37 @@
  *                        This article at “Gödel’s Lost Letter and P=NP”:
  *                        http://rjlipton.wordpress.com/2014/08/19/the-derivative-of-a-number/
  *
+ *    Target language:    OCaml-4.02
+ *
  *    Text encoding:      UTF-8
  *
  *    Created 2014-08-20: Ulrich Singer
  *)
 
 
-(**
- *  A table type that maps prime factors to their occurence count.
- *)
-module FacMem =
-struct
-  module IntMap = Map.Make (struct type t = int let compare = compare end)
-  type t = int IntMap.t
+let bitwidth num =
+  let rec count bits = function
+    | 0 -> bits
+    | n -> count (bits + 1) (n lsr 1)
+  in
+  count 0 num
 
-  let empty: t = IntMap.empty
 
-  let increase mem fac =
-    let old = try IntMap.find fac mem with Not_found -> 0
-    in IntMap.add fac (old + 1) mem
+let isqrt num =
+  let rec track rt =
+    if rt * rt < num then track (rt + 1) else rt
+  in
+  let lb = (bitwidth num + 1) / 2 in
+  track (num lsr lb)
 
-  let factors mem = IntMap.bindings mem
-end
+
+let ipow num xpn =
+  let rec emul acc fac rst =
+    if rst < 1 then acc
+    else
+      emul (if rst land 1 <> 0 then acc * fac else acc) (fac * fac) (rst lsr 1)
+  in
+  emul 1 num xpn
 
 
 (**
@@ -44,21 +53,24 @@ end
  *  is its occurence count (exponent).  For prime numbers, the list
  *  has only one element with E = 1.  0 and 1 yield an empty list.
  *)
-let pfd (num: int): (int * int) list =
-  let rec facloop arg fac top mem =
-    if arg = 1 then mem
-    else if fac > top || fac > arg then FacMem.increase mem arg
-    else if arg mod fac = 0 then facloop (arg / fac) fac top (FacMem.increase mem fac)
-    else facloop arg (fac + if fac = 2 then 1 else 2) top mem
-  and isqrt num = num |> float_of_int |> sqrt |> ceil |> int_of_float
-  and pfd' arg mem =
-    if arg < 0 then pfd' (- arg) mem
-    else if arg < 2 then mem
-    else if arg < 4 then FacMem.increase mem arg
-    else facloop arg 2 (isqrt arg) mem
+
+let primefactors num =
+  let root = isqrt num in
+  let countup num = function
+    | (cmp,cnt)::cdr when cmp = num -> (num, cnt+1)::cdr
+    | lst -> (num, 1)::lst
   in
-  pfd' num FacMem.empty |> FacMem.factors
-;;
+  let rec find accu prod fact =
+    if prod = 1
+    then List.rev accu
+    else if fact > min root prod
+    then List.rev (countup prod accu)
+    else if prod mod fact = 0
+    then find (countup fact accu) (prod / fact) fact
+    else find accu prod (fact + if fact = 2 then 1 else 2)
+  in
+  if num < 2 then []
+  else find [] num 2
 
 
 (**
@@ -79,21 +91,18 @@ let pfd (num: int): (int * int) list =
  *  =>
  *  (u v)'  =  (a' b + b' a) v + v' (a b)
  *)
-let deriv (num: int): int =
-  let rec derloop u u' vs =
-    match vs with
-    | []      -> u'
-    | v :: ws ->
+let deriv num =
+  let pair_value (fac, xpn) = ipow fac xpn in
+  let pair_deriv (fac, xpn) = xpn * ipow fac (xpn - 1) in
+  let rec derloop u u' = function
+    | v::vs ->
       let vv = pair_value v
-      in derloop (u * vv) (u' * vv + u * pair_deriv v) ws
-  and ipow base expn = (float_of_int base)**(float_of_int expn) |> int_of_float
-  and pair_deriv (fac, xpn) = xpn * ipow fac (xpn - 1)
-  and pair_value (fac, xpn) = ipow fac xpn
+      in derloop (u * vv) (u' * vv + u * pair_deriv v) vs
+    | [] -> u'
   in
-  match (pfd num) with
-  | []          -> 0
-  | car :: cdr  -> derloop (pair_value car) (pair_deriv car) cdr
-;;
+  match (primefactors num) with
+  | car::cdr -> derloop (pair_value car) (pair_deriv car) cdr
+  | []       -> 0
 
 
 (**
@@ -106,7 +115,7 @@ let () =
   do
     let arg = Sys.argv.(ind) in
     let num = try int_of_string arg with Failure _ -> 0 in
-    Printf.printf "%d\n" (deriv num)
+    Printf.printf "%d' = %d\n" num (deriv num)
   done
 ;;
 
