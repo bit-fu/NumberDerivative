@@ -15,10 +15,10 @@ Here's a shell session with the `numder` command:
 ```sh
 
 $ ./numder 10 12 14 15 16 
-7
-16
-9
-8
-32
+10' = 7
+12' = 16
+14' = 9
+15' = 8
+16' = 32
 
 ```
